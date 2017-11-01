@@ -21,14 +21,14 @@ namespace taio_project
             var experts = new List<Expert>()
             {
                 new Expert(0, new List<bool>{ false, false, true }),
-                new Expert(1, new List<bool>{ false, false, true }),
-                new Expert(2, new List<bool>{ false, false, true }),
+                new Expert(1, new List<bool>{ true, false, true }),
+                new Expert(2, new List<bool>{ false, false, false }),
                 new Expert(3, new List<bool>{ false, false, true }),
-                new Expert(4, new List<bool>{ true, false, true }),
+                new Expert(4, new List<bool>{ true, false, false }),
                 new Expert(5, new List<bool>{ false, false, true }),
                 new Expert(6, new List<bool>{ false, true, true }),
-                new Expert(7, new List<bool>{ false, false, true }),
-                new Expert(8, new List<bool>{ false, false, false }),
+                new Expert(7, new List<bool>{ true, false, false}),
+                new Expert(8, new List<bool>{ true, false, false }),
                 new Expert(9, new List<bool>{ false, false, true }),
             };
 

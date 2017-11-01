@@ -19,22 +19,40 @@ namespace taio_project.Controllers
             Projects = projects;
         }
 
-        private int GetVerticeIdFromProjectInfo(int projectId, int requirementIndex)
+        public Graph Solve()
         {
-            int requirementsCount = Experts[0].Specializations.Count;
-            return Experts.Count + requirementsCount * projectId + requirementIndex;
+            int sourceVertice;
+            int targetVertice;
+
+            // tworzenie grafu dla algorytmu
+            // zgodnie z zalozeniami dokumentu
+            Graph graph;
+            try
+            {
+                graph = CreateGraph(out sourceVertice, out targetVertice);
+            }
+            catch (ArgumentOutOfRangeException e)
+            {
+                Console.WriteLine("Nie mozna stworzyc grafu dla 0 ekspertów lub 0 projektow.");
+                return null;
+            }
+
+            // aplikacja właściwego algorytmu
+            // otrzymujemy graf przepływu
+            Graph graphFlow = FordFulkerson(graph, sourceVertice, targetVertice);
+
+            // tworzenie wyniku na podstawie
+            // grafu przepływu
+            GenerateResult(graphFlow);
+
+            return graphFlow;
         }
 
-        private int GetProjectIdFromVerticeId(int verticeId)
-        {
-            throw new NotImplementedException();
-        }
 
         public void GenerateResult(Graph graphFlow)
         {
-            // iterujemy się po wierzchołkach ekspertów i wypisujemy
-            // projekty (i dziedzinę) do jakich zostal przypisany
-
+            // iterujemy się po wierzcholkach ekspertow i wypisujemy
+            // projekty (i dziedzine) do jakich zostal przypisany
             for (int expertId = 0; expertId < Experts.Count; ++expertId)
             {
                 foreach(var project in Projects)
@@ -49,35 +67,121 @@ namespace taio_project.Controllers
 
                         // Expert o ID = expertId
                         // został przypisany do projektu
-                        // o ID = project.Id i wykorzystał umiejętność
+                        // o ID = project.Id i wykorzystal umiejetnosc
                         // o ID = j
-
-                        // numerowanie od 0
-
-                        Console.WriteLine($"Expert nr { expertId } został przypisany do projektu nr { project.Id }, wykorzystał specjalizację nr { j }");
+                        // Numerowanie od 0
+                        Console.WriteLine($"Ekspert nr { expertId } został przypisany do projektu nr { project.Id }, wykorzystał specjalizację nr { j }");
                     }
                 }
             }
         }
 
-        public Graph Solve()
+        private Graph FordFulkerson(Graph graph, int source, int target)
         {
-            int sourceVertice;
-            int targetVertice;
-            // tworzenie grafu
-            Graph graph = CreateGraph(out sourceVertice, out targetVertice);
+            Graph graphFlow = new AdjacencyListsGraph<SimpleAdjacencyList>(true, graph.VerticesCount);
+            Graph residualGraph = new AdjacencyListsGraph<SimpleAdjacencyList>(true, graph.VerticesCount);
 
-            // TODO
-            // zaimplementowac Forda-Fulkersona
-            // jesli zajdzie taka potrzeba
-            Graph graphFlow;
-            graph.FordFulkersonDinicMaxFlow(sourceVertice, targetVertice, out graphFlow, MaxFlowGraphExtender.BFPath);
+            // stworzenie grafu rezydualnego
+            // dodanie odwrotnych krawedzi z
+            // waga 0
+            for (int i = 0; i < graph.VerticesCount; ++i)
+                foreach (var edge in graph.OutEdges(i))
+                {
+                    residualGraph.AddEdge(i, edge.To, edge.Weight);
+                    residualGraph.AddEdge(edge.To, i, 0);
+                }
 
-            // tworzenie wyniku na podstawie
-            // grafu przepływu
-            GenerateResult(graphFlow);
+            // (glowna petla algorytmu FF)
+            while (true)
+            {
+                // (dopoki istnieje sciezka w grafie rezydualnym)
+                var path = FindShortestPath(residualGraph, source, target);
+                if (path == null)
+                    break;
+
+                // (minimalna przepustowosc w sciezce)
+                int cfMin = int.MaxValue;
+                for (int i = 1; i < path.Count; ++i)
+                    cfMin = Math.Min(cfMin, (int)residualGraph.GetEdgeWeight(path[i - 1], path[i]));
+
+                // (aktualizacja grafu rezydualnego)
+                for (int i = 1; i < path.Count; ++i)
+                {
+                    var weight = (int)residualGraph.GetEdgeWeight(path[i - 1], path[i]);
+                    residualGraph.ModifyEdgeWeight(path[i - 1], path[i], -cfMin);
+
+                    var weight2 = (int)residualGraph.GetEdgeWeight(path[i], path[i-1]);
+                    residualGraph.ModifyEdgeWeight(path[i], path[i - 1], cfMin);
+                }
+            }
+
+            // graf rezydualny => graf przepływu
+            for (int i = 0; i < graph.VerticesCount; ++i)
+                foreach (var edge in graph.OutEdges(i))
+                {
+                    var weight = (int)residualGraph.GetEdgeWeight(edge.To, edge.From);
+                    graphFlow.AddEdge(edge.From, edge.To, weight);
+                }
 
             return graphFlow;
+        }
+
+        public List<int> FindShortestPath(Graph graph, int source, int target)
+        {
+            // wyszukiwanie najkrotszej 
+            // sciezki na podstawie BFS
+            var previous = new Dictionary<int, int>();
+
+            var queue = new Queue<int>();
+            queue.Enqueue(source);
+
+            while (queue.Count > 0)
+            {
+                bool targetFound = false;
+                var vertex = queue.Dequeue();
+                foreach (var edge in graph.OutEdges(vertex))
+                {
+                    if (edge.Weight == 0)
+                        continue;
+
+                    var neighbor = edge.To;
+                    if (previous.ContainsKey(neighbor))
+                        continue;
+
+                    previous[neighbor] = vertex;
+
+                    if (neighbor == target)
+                    {
+                        targetFound = true;
+                        break;
+                    }
+                    queue.Enqueue(neighbor);
+                }
+
+                if (targetFound)
+                    break;
+            }
+
+            Func<int, List<int>> shortestPath = v => {
+                var path = new List<int> { };
+
+                if (!previous.ContainsKey(v))
+                    return null;
+
+                var current = v;
+                while (!current.Equals(source))
+                {
+                    path.Add(current);
+                    current = previous[current];
+                };
+
+                path.Add(source);
+                path.Reverse();
+
+                return path;
+            };
+
+            return shortestPath(target);
         }
 
         public Graph CreateGraph(out int sourceVertice, out int targetVertice)
@@ -85,10 +189,8 @@ namespace taio_project.Controllers
             if (Experts == null || Projects == null)
                 throw new Exception("Uzupelnij wartosci wejsciowe!");
 
-            // TODO
-            // uwzględnić przypadki brzegowe: 
-            // 1. 0 ekspertów
-            // 2. 0 projektów
+            if (Experts.Count == 0 || Projects.Count == 0)
+                throw new ArgumentOutOfRangeException();
 
             // Id ekspertów i projektów numerowane są od 0
             int requirementsCount = Experts[0].Specializations.Count;
@@ -142,6 +244,12 @@ namespace taio_project.Controllers
             }
 
             return graph;
+        }
+
+        private int GetVerticeIdFromProjectInfo(int projectId, int requirementIndex)
+        {
+            int requirementsCount = Experts[0].Specializations.Count;
+            return Experts.Count + requirementsCount * projectId + requirementIndex;
         }
     }
 }
