@@ -14,7 +14,7 @@ namespace taio_project
     {
         public static List<Expert> Experts;
         public static List<Project> Projects;
-        public static int ExpertCount = 0;
+        public static int ExpertsCount = 0;
         public static int ProjectsCount = 0;
         static void Main(string[] args)
         {
@@ -64,35 +64,77 @@ namespace taio_project
         }
         static void FillCollections()
         {
-            string path = "tests.txt";
-            if (File.Exists(path))
+            try
             {
-                string[] readText = File.ReadAllLines(path);
-                foreach (string s in readText)
+                string path = "tests.txt";
+                if (File.Exists(path))
                 {
-                    if (s[0]=='w') //wykonawca
+                    string[] readText = File.ReadAllLines(path);
+                    int entryCount = (int)Char.GetNumericValue(readText[0][0]);
+                    int tmpExpertsCount = (int)Char.GetNumericValue(readText[1][0]);
+                    int tmpProjectsCount = (int)Char.GetNumericValue(readText[2][0]);
+
+                    for (int i = 3; i < tmpExpertsCount + 3; i++)
                     {
-                        Expert currentExpert = new Expert(ExpertCount++,new List<bool>());
-                        for (int i=3;i<s.Length;i+=3)
+                        Expert currentExpert = new Expert(ExpertsCount++, new List<bool>());
+                        for (int j = 0; j < entryCount; j += 2)
                         {
-                            if (s[i] == '1')
+                            if (readText[i][j] == '1')
                                 currentExpert.Specializations.Add(true);
-                            else
+                            else if (readText[i][j] == '0')
                                 currentExpert.Specializations.Add(false);
+                            else
+                                throw new ArgumentNullException();
                         }
                         Experts.Add(currentExpert);
                     }
-                    else //projekt
+                    for (int i = 3 + tmpExpertsCount; i < tmpExpertsCount + tmpProjectsCount + 3; i++)
                     {
                         Project currentProject = new Project(ProjectsCount++, new List<int>());
-                        for (int i = 3; i < s.Length; i += 3)
+                        for (int j = 0; j < entryCount; j += 2)
                         {
-                            currentProject.Requirements.Add((int)Char.GetNumericValue(s[i]));
+                            int a = (int)Char.GetNumericValue(readText[i][j]);
+                            if (a < 0)
+                                throw new ArgumentNullException();
+                            currentProject.Requirements.Add(a);
                         }
                         Projects.Add(currentProject);
                     }
                 }
             }
+            catch (ArgumentNullException a)
+            {
+                Console.WriteLine("Podane dane są niepoprawne!");
+                Console.ReadKey();
+            }
+
+            //wariant z prefiksami w i p
+
+            //foreach (string s in readText)
+            //{
+            //if (s[0]=='w') //wykonawca
+            //{
+            //    Expert currentExpert = new Expert(ExpertCount++,new List<bool>());
+            //    for (int i=3;i<s.Length;i+=3)
+            //    {
+            //        if (s[i] == '1')
+            //            currentExpert.Specializations.Add(true);
+            //        else
+            //            currentExpert.Specializations.Add(false);
+            //    }
+            //    Experts.Add(currentExpert);
+            //}
+            //else //projekt
+            //{
+            //    Project currentProject = new Project(ProjectsCount++, new List<int>());
+            //    for (int i = 3; i < s.Length; i += 3)
+            //    {
+            //        currentProject.Requirements.Add((int)Char.GetNumericValue(s[i]));
+            //    }
+            //    Projects.Add(currentProject);
+            //}
+
+            // }
         }
     }
 }
