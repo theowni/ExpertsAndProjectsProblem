@@ -57,6 +57,7 @@ namespace taio_project
             Projects = new List<Project>();
 
             FillCollections();
+            Console.WriteLine("Program wczytał dane z pliku tests.txt.");
 
             var solver = new ProblemSolver(Experts, Projects);
             solver.Solve();

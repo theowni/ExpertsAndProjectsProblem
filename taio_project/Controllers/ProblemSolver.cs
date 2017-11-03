@@ -26,9 +26,11 @@ namespace taio_project.Controllers
 
             // tworzenie grafu dla algorytmu
             // zgodnie z zalozeniami dokumentu
+
             Graph graph;
             try
             {
+                Console.WriteLine("Program rozpoczyna tworzenie grafu dla algorytmu FF.");
                 graph = CreateGraph(out sourceVertice, out targetVertice);
             }
             catch (ArgumentOutOfRangeException e)
@@ -39,10 +41,13 @@ namespace taio_project.Controllers
 
             // aplikacja właściwego algorytmu
             // otrzymujemy graf przepływu
+            Console.WriteLine("Program zakończył tworzenie grafu.");
+            Console.WriteLine("Program wykonuje na grafie algorytm FF:");
             Graph graphFlow = FordFulkerson(graph, sourceVertice, targetVertice);
 
             // tworzenie wyniku na podstawie
             // grafu przepływu
+            Console.WriteLine("Tworzenie wyniku na podstawie obliczonego grafu przepływu.");
             GenerateResult(graphFlow);
 
             return graphFlow;
@@ -53,6 +58,15 @@ namespace taio_project.Controllers
         {
             // iterujemy się po wierzcholkach ekspertow i wypisujemy
             // projekty (i dziedzine) do jakich zostal przypisany
+
+            Console.WriteLine();
+            Console.WriteLine("///////////////////////////////");
+            Console.WriteLine("///////////////////////////////");
+            Console.WriteLine("////////   W Y N I K  /////////");
+            Console.WriteLine("///////////////////////////////");
+            Console.WriteLine("   Na podstawie grafu przepływu wypisujemy połączenia ekspertów między wymaganiami poszczególnych projektów.");
+            Console.WriteLine();
+
             for (int expertId = 0; expertId < Experts.Count; ++expertId)
             {
                 foreach(var project in Projects)
@@ -70,7 +84,7 @@ namespace taio_project.Controllers
                         // o ID = project.Id i wykorzystal umiejetnosc
                         // o ID = j
                         // Numerowanie od 0
-                        Console.WriteLine($"Ekspert nr { expertId } został przypisany do projektu nr { project.Id }, wykorzystał specjalizację nr { j }");
+                        Console.WriteLine($"   Ekspert nr { expertId } został przypisany do projektu nr { project.Id }, wykorzystał specjalizację nr { j }");
                     }
                 }
             }
@@ -84,6 +98,8 @@ namespace taio_project.Controllers
             // stworzenie grafu rezydualnego
             // dodanie odwrotnych krawedzi z
             // waga 0
+
+            Console.WriteLine("   Tworzymy graf rezydualny z poprzednio stworzonego grafu.");
             for (int i = 0; i < graph.VerticesCount; ++i)
                 foreach (var edge in graph.OutEdges(i))
                 {
@@ -92,30 +108,42 @@ namespace taio_project.Controllers
                 }
 
             // (glowna petla algorytmu FF)
+            Console.WriteLine("      Rozpoczynam główną pętlę algorytmu:");
             while (true)
             {
                 // (dopoki istnieje sciezka w grafie rezydualnym)
+                Console.WriteLine("         Szukam najkrótszej ścieżki w grafie G");
                 var path = FindShortestPath(residualGraph, source, target);
                 if (path == null)
+                {
+                    Console.WriteLine("         Nie znaleziono ścieżki w grafie. Wychodzę z pętli.");
                     break;
+                }
 
+                Console.WriteLine("         Znaleziono ścieżkę w grafie.");
                 // (minimalna przepustowosc w sciezce)
                 int cfMin = int.MaxValue;
                 for (int i = 1; i < path.Count; ++i)
                     cfMin = Math.Min(cfMin, (int)residualGraph.GetEdgeWeight(path[i - 1], path[i]));
 
+                Console.WriteLine($"         Określam minimalną przepustowość na ścieżce={cfMin}.");
+
+                Console.WriteLine($"         Aktualizuję wagi grafu rezydualnego:");
                 // (aktualizacja grafu rezydualnego)
                 for (int i = 1; i < path.Count; ++i)
                 {
+                    Console.WriteLine($"            Zmniejszam przepływ o {cfMin} w kierunku ujścia zgodnie ze ścieżką dla krawędzi {path[i-1]}, {path[i]}");
                     var weight = (int)residualGraph.GetEdgeWeight(path[i - 1], path[i]);
                     residualGraph.ModifyEdgeWeight(path[i - 1], path[i], -cfMin);
 
+                    Console.WriteLine($"            Zwiększam przepływ o {cfMin} w kierunku źródła zgodnie ze ścieżką dla krawędzi {path[i - 1]}, {path[i]}");
                     var weight2 = (int)residualGraph.GetEdgeWeight(path[i], path[i-1]);
                     residualGraph.ModifyEdgeWeight(path[i], path[i - 1], cfMin);
                 }
             }
 
             // graf rezydualny => graf przepływu
+            Console.WriteLine($"      Wyjściowy graf rezydualny jest grafem maksymalnego przepływu.");
             for (int i = 0; i < graph.VerticesCount; ++i)
                 foreach (var edge in graph.OutEdges(i))
                 {
@@ -135,10 +163,13 @@ namespace taio_project.Controllers
             var queue = new Queue<int>();
             queue.Enqueue(source);
 
+            Console.WriteLine($"            Wstawiamy na stos wierzchołek źródła - {source}");
             while (queue.Count > 0)
             {
                 bool targetFound = false;
                 var vertex = queue.Dequeue();
+
+                Console.WriteLine($"            Zdejmujemy ze stosu wierzchołek {vertex}.");
                 foreach (var edge in graph.OutEdges(vertex))
                 {
                     if (edge.Weight == 0)
@@ -148,13 +179,18 @@ namespace taio_project.Controllers
                     if (previous.ContainsKey(neighbor))
                         continue;
 
+                    Console.WriteLine($"            Istnieje krawędź jaką możemy przejść od wierzchołka {vertex} do {neighbor}.");
+                    Console.WriteLine($"            Dodajemy wierzcholek {vertex} jako poprzednik {neighbor}.");
                     previous[neighbor] = vertex;
 
                     if (neighbor == target)
                     {
+                        Console.WriteLine($"            Doszlismy do źródła. Kończymy.");
                         targetFound = true;
                         break;
                     }
+
+                    Console.WriteLine($"            Dodajemy na stos wierzcholek {neighbor}.");
                     queue.Enqueue(neighbor);
                 }
 
@@ -162,6 +198,7 @@ namespace taio_project.Controllers
                     break;
             }
 
+            Console.WriteLine($"            Obliczamy ścieżkę na podstawie poprzedników.");
             Func<int, List<int>> shortestPath = v => {
                 var path = new List<int> { };
 
@@ -181,11 +218,19 @@ namespace taio_project.Controllers
                 return path;
             };
 
+            if (shortestPath(target) != null)
+            {
+                Console.Write($"            Obliczona ścieżka to: ");
+                foreach (var el in shortestPath(target))
+                    Console.Write($"{el}, ");
+                Console.Write("\n");
+            }
+
             return shortestPath(target);
         }
 
         public Graph CreateGraph(out int sourceVertice, out int targetVertice)
-        {
+        {    
             if (Experts == null || Projects == null)
                 throw new Exception("Uzupelnij wartosci wejsciowe!");
 
@@ -199,12 +244,15 @@ namespace taio_project.Controllers
             targetVertice = verticesCount - 1;
             var graph = new AdjacencyListsGraph<SimpleAdjacencyList>(true, verticesCount);
 
+            Console.WriteLine("   Stworzono wierzchołki: źródło i ujście.");
+            Console.WriteLine("   Łączenie wierzchołków-eskpertów ze źródłem - wagi=1.");
             // 1. polaczenie zrodla z Ekspertami
             foreach(var expert in Experts)
             {
                 graph.AddEdge(sourceVertice, expert.Id);
             }
 
+            Console.WriteLine("   Dla każdego projektu tworzymy wierzchołki wymagań i łączymy z ujściem:");
             // 2. polaczenie projektow z celem
             foreach(var project in Projects)
             {
@@ -212,11 +260,14 @@ namespace taio_project.Controllers
                 {
                     // każdy projekt ma osobne wierzchołki dla 
                     // poszczególnych wymagań
+
                     int verticeId = GetVerticeIdFromProjectInfo(project.Id, i);
                     graph.AddEdge(verticeId, targetVertice, project.Requirements[i]);
+                    Console.WriteLine($"      Wymaganie nr {i}, projektu nr {project.Id} łączymy z ujściem - waga={project.Requirements[i]}");
                 }
             }
 
+            Console.WriteLine("   Każdego eksperta łączymy z wierzchołkami wymagań projektów, ma których się zna:");
             // 3. polaczenie ekspertow z projektami
             foreach(var expert in Experts)
             {
@@ -237,6 +288,7 @@ namespace taio_project.Controllers
                         if (projectFromSpec.Requirements[i] == 0)
                             continue;
 
+                        Console.WriteLine($"      Łączymy eksperta {expert.Id} z projektem nr {projectFromSpec.Id} i wymaganiem nr {i} - waga=1.");
                         int verticeId = GetVerticeIdFromProjectInfo(projectFromSpec.Id, i);
                         graph.AddEdge(expert.Id, verticeId);
                     }
