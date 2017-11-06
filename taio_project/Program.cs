@@ -55,19 +55,28 @@ namespace taio_project
 
             Experts = new List<Expert>();
             Projects = new List<Project>();
-
-            FillCollections();
+            if(args.Length == 0)
+            {
+                Console.WriteLine("Nie podano argumentu");
+                System.Environment.Exit(1);
+            }
+            FillCollections(args[0]);
             Console.WriteLine("Program wczytał dane z pliku tests.txt.");
 
+            var stopwatch = new System.Diagnostics.Stopwatch();
+            stopwatch.Start();
             var solver = new ProblemSolver(Experts, Projects);
             solver.Solve();
-            Console.ReadKey();
+            stopwatch.Stop();
+            Console.WriteLine();
+            Console.WriteLine("Czas wykonania:");
+            Console.WriteLine(stopwatch.Elapsed.TotalSeconds + "s");
         }
-        static void FillCollections()
+        static void FillCollections(string path)
         {
             try
             {
-                string path = "tests.txt";
+                path = "tests.txt";
                 if (File.Exists(path))
                 {
                     string[] readText = File.ReadAllLines(path);
