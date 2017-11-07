@@ -18,41 +18,6 @@ namespace taio_project
         public static int ProjectsCount = 0;
         static void Main(string[] args)
         {
-            // Przykład
-            // Wprowadzamy listę obiektów Expert
-            // Każdy ekspert w konstruktorze ma:
-            //   1. Id numerowane od 0
-            //   2. Lista umiejętności (true/false)
-            //var experts = new List<Expert>()
-            //{
-            //    new Expert(0, new List<bool>{ false, false, true }),
-            //    new Expert(1, new List<bool>{ true, false, true }),
-            //    new Expert(2, new List<bool>{ false, false, false }),
-            //    new Expert(3, new List<bool>{ false, false, true }),
-            //    new Expert(4, new List<bool>{ true, false, false }),
-            //    new Expert(5, new List<bool>{ false, false, true }),
-            //    new Expert(6, new List<bool>{ false, true, true }),
-            //    new Expert(7, new List<bool>{ true, false, false}),
-            //    new Expert(8, new List<bool>{ true, false, false }),
-            //    new Expert(9, new List<bool>{ false, false, true }),
-            //};
-
-            // Wprowadzamy listę obiektów Project
-            // Każdy projekt w konstruktorze ma:
-            //   1. Id numerowane od 0
-            //   2. Lista wymagań danego projektu
-            //var projects = new List<Project>()
-            //{
-            //    new Project(0, new List<int>{ 1, 0, 1 }),
-            //    new Project(1, new List<int>{ 1, 0, 2 }),
-            //    new Project(2, new List<int>{ 1, 0, 1 }),
-            //    new Project(3, new List<int>{ 1, 0, 3 }),
-            //};
-
-            // Aby zaimplementować wczytywanie z pliku 
-            // wystarczy uzupełnić te dwie powyższe kolekcje
-            // w taki sposób jak pokazano w przykładzie.
-
             Experts = new List<Expert>();
             Projects = new List<Project>();
             if(args.Length == 0)
@@ -61,22 +26,24 @@ namespace taio_project
                 System.Environment.Exit(1);
             }
             FillCollections(args[0]);
-            Console.WriteLine("Program wczytał dane z pliku tests.txt.");
+            Console.WriteLine("Program wczytał dane z pliku");
 
             var stopwatch = new System.Diagnostics.Stopwatch();
             stopwatch.Start();
             var solver = new ProblemSolver(Experts, Projects);
             solver.Solve();
             stopwatch.Stop();
+
             Console.WriteLine();
             Console.WriteLine("Czas wykonania:");
             Console.WriteLine(stopwatch.Elapsed.TotalSeconds + "s");
+            Console.WriteLine();
         }
         static void FillCollections(string path)
         {
             try
             {
-                path = "tests.txt";
+                //path = "tests.txt";
                 if (File.Exists(path))
                 {
                     string[] readText = File.ReadAllLines(path);

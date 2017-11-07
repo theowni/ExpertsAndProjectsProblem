@@ -64,6 +64,7 @@ namespace taio_project.Controllers
             Console.WriteLine("///////////////////////////////");
             Console.WriteLine("////////   W Y N I K  /////////");
             Console.WriteLine("///////////////////////////////");
+            Console.WriteLine("///////////////////////////////");
             Console.WriteLine("   Na podstawie grafu przepływu wypisujemy połączenia ekspertów między wymaganiami poszczególnych projektów.");
             Console.WriteLine();
 
